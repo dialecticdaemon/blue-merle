@@ -4,7 +4,6 @@ import string
 import argparse
 import serial
 import re
-from functools import reduce
 from enum import Enum
 
 class Modes(Enum):
@@ -21,10 +20,17 @@ modes.add_argument("-s", "--static", help="Sets user-defined IMEI", action="stor
 modes.add_argument("-r", "--random", help="Sets random IMEI", action="store_true")
 
 imei_length = 14 # without validation digit
-imei_prefix = ["35674108", "35290611", "35397710", "35323210", "35384110",
-               "35982748", "35672011", "35759049", "35266891", "35407115",
-               "35538025", "35480910", "35324590", "35901183", "35139729",
-               "35479164"]
+
+imei_prefix = [
+    "352073", # Samsung
+    "352074", # iPhone
+    "352075", # Sony
+    "352076", # LG
+    "352077", # Nokia
+    "352078", # Huawei
+    "352079", # Xiaomi
+    "352080" # OnePlus
+]
 
 verbose = False
 mode = None
@@ -52,9 +58,8 @@ def generate_imei(imei_prefix, imsi_d=None):
     if mode == Modes.DETERMINISTIC:
         random.seed(imsi_d)
 
-    imei = random.choice(imei_prefix)
-    random_part_length = imei_length - len(imei)
-    imei += "".join(random.sample(string.digits, random_part_length))
+    tac = random.choice(imei_prefix)
+    imei = tac + "".join(random.sample(string.digits, imei_length - len(tac)))
 
     validation_digit = luhn_check(imei)
     imei = str(imei) + str(validation_digit)
@@ -62,7 +67,7 @@ def generate_imei(imei_prefix, imsi_d=None):
     return imei
 
 def validate_imei(imei):
-    if len(imei) != 14:
+    if len(imei) != 15:
         return False
 
     validation_digit = int(imei[-1])
