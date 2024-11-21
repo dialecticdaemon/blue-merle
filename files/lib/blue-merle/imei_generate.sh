@@ -24,14 +24,11 @@ LUHN_CHECK () {
 GENERATE_IMEI () {
     # TACs for different manufacturers
     local tacs=(
-        "352073" # Samsung
-        "352074" # iPhone
-        "352075" # Sony
-        "352076" # LG
-        "352077" # Nokia
-        "352078" # Huawei
-        "352079" # Xiaomi
-        "352080" # OnePlus
+        "353001" # iPhone 15
+        "353002" # iPhone 15 Pro
+        "351005" # Galaxy S23
+        "352001" # Pixel 7
+        "352101" # Pixel 8
     )
 
     # Randomly choose a manufacturer
