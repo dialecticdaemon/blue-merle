@@ -3,10 +3,10 @@ name: CI
 on:
   push:
     branches:
-      - Testing_branch_for_new_TAC  # Ensure the workflow triggers only for your branch
+      - Testing_branch_for_new_TAC  # Ensure it only triggers on the correct branch
     paths-ignore:
-      - 'README.md'  # Ignore README changes
-  workflow_dispatch:  # Allow manual trigger
+      - 'README.md'  # Ignore README updates
+  workflow_dispatch:  # Allow manual triggering of the workflow
 
 concurrency:
   group: CI
@@ -22,61 +22,67 @@ jobs:
       owrt-package: blue-merle
       SDK_URL: "https://downloads.openwrt.org/releases/23.05.0/targets/ath79/nand/openwrt-sdk-23.05.0-ath79-nand_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
       SDK_FILENAME: "openwrt-sdk-23.05.0-ath79-nand_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+
     steps:
-      # Checkout your subbranch
-      - uses: actions/checkout@v3
+      - name: Checkout Testing Branch
+        uses: actions/checkout@v3
         with:
-          ref: Testing_branch_for_new_TAC  # Explicitly use your subbranch
-      
-      # Get the SDK
+          ref: Testing_branch_for_new_TAC  # Explicitly checkout your custom branch
+
+      - name: Verify Branch and Files
+        run: |
+          echo "Current Branch:"
+          git branch --show-current
+          echo "Repository Files:"
+          ls -R
+
       - name: Get the SDK
         run: |
-          mkdir sdk
+          mkdir -p sdk
           cd sdk
-          wget "${SDK_URL}"
+          wget "${SDK_URL}" -O "${SDK_FILENAME}"
           tar xf "${SDK_FILENAME}"
-      
-      # Set up package directory
-      - name: Set up package dir
+
+      - name: Set up package directory
         run: |
           cd "sdk/${SDK_FILENAME%.tar.xz}"
-          mkdir package/${{ env.owrt-package }}
+          mkdir -p package/${{ env.owrt-package }}
           ln -s "${GITHUB_WORKSPACE}"/Makefile package/${{ env.owrt-package }}/
           ln -s "${GITHUB_WORKSPACE}"/files package/${{ env.owrt-package }}/
-      
-      # Update packages feed
-      - name: Update packages feed
+
+      - name: Debug TAC Table
+        run: |
+          echo "Checking TAC Table:"
+          cat "${GITHUB_WORKSPACE}/files/path-to-tac-file"
+
+      - name: Update Packages Feed
         run: |
           cd "sdk/${SDK_FILENAME%.tar.xz}"
           scripts/feeds update packages >/dev/null
-      
-      # Set up OpenWrt configuration
-      - name: Set up OpenWrt config
+
+      - name: Set up OpenWrt Config
         run: |
           cd "sdk/${SDK_FILENAME%.tar.xz}"
           echo "CONFIG_SIGNED_PACKAGES=n" > .config
           make defconfig
-      
-      # Build the package
-      - name: Build package
+
+      - name: Build Package
         run: |
           cd "sdk/${SDK_FILENAME%.tar.xz}"
           make -j$(nproc) V=s package/${{ env.owrt-package }}/compile
           make -j1 V=s package/index
-      
-      # Generate artifact name
-      - name: Generate artifact name
+
+      - name: Generate Artifact Name
         id: generate-name
         run: echo "artifact-name=${{ github.repository }}-${{ github.ref_name }}-${{ github.sha }}" >> $GITHUB_OUTPUT
-      
-      # Prepare artifact for upload
-      - name: Prepare artifact
+
+      - name: Prepare Artifact
         run: |
-          mkdir package-output
+          mkdir -p package-output
           rsync -av sdk/"${SDK_FILENAME%.tar.xz}"/bin/packages/mips_24kc/base/"${{ env.owrt-package }}"*.ipk package-output/
-      
-      # Upload artifact
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.generate-name.outputs.artifact-name }}
           path: package-output/
