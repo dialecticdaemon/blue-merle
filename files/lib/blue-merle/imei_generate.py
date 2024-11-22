@@ -22,10 +22,10 @@ modes.add_argument("-r", "--random", help="Sets random IMEI", action="store_true
 
 imei_length = 14 # without validation digit
 imei_prefix = [
-    "353001" # iPhone 15
-    "353002" # iPhone 15 Pro
-    "351005" # Galaxy S23
-    "352001" # Pixel 7
+    "353001", # iPhone 15
+    "353002", # iPhone 15 Pro
+    "351005", # Galaxy S23
+    "352001", # Pixel 7
     "352101" # Pixel 8
     ]
 
@@ -52,7 +52,7 @@ def luhn_check(imei):
     return (10 - (sum % 10)) % 10
 
 def generate_imei(imei_prefix, imsi_d=None):
-    if mode == Modes.DETERMINISTIC:
+    if mode == Modes.DETERMINISTIC and imsi_d is not None:
         random.seed(imsi_d)
 
     imei = random.choice(imei_prefix)
@@ -107,6 +107,7 @@ if __name__ == '__main__':
         imsi_d = get_imsi()
     if args.random:
         mode = Modes.RANDOM
+        imei = generate_imei(imei_prefix)  # No need for imsi_d in RANDOM mode
     if args.static is not None:
         mode = Modes.STATIC
         static_imei = args.static
