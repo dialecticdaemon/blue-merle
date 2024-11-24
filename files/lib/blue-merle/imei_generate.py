@@ -100,6 +100,7 @@ def get_imei():
 
 if __name__ == '__main__':
     args = ap.parse_args()
+    imsi_d = None # Ensure a deafault value for imsi_d to avoid undefined errors
     if args.verbose:
         verbose = args.verbose
     if args.deterministic:
@@ -118,7 +119,8 @@ if __name__ == '__main__':
         else:
             exit(-1)
     else:
-        imei = generate_imei(imei_prefix, imsi_d)
+        # Pass `imsi_d` only for deterministic mode
+        imei = generate_imei(imei_prefix, imsi_d if mode == Modes.DETERMINISTIC else None)
         if not args.generate_only:
             if not set_imei(imei):
                 exit(-1)
