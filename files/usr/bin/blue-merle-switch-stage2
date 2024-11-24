@@ -17,20 +17,11 @@ do
 	sleep 1
 done
 
-retry_count=0
-max_retries=5
-
 until gl_modem AT AT+CFUN=4 | grep -q OK
 do
 	leak=1
-	retry_count=$((retry_count + 1))
-	mcu_send_message "CFUN=4 failed. Retrying in 5 seconds. Attempt $retry_count of $max_retries."
-	sleep 5
-	
-	if [[ $retry_count -ge $max_retries ]]; then
-		mcu_send_message "CFUN=4 failed after $max_retries attempts. Please check the modem."
-		exit 1
-	fi
+	mcu_send_message "CFUN=4 failed. Trying again."
+	sleep 1
 done
 
 if [[ $leak -eq 1 ]]; then
