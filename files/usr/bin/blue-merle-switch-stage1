@@ -22,7 +22,7 @@ fi
 
 echo "$now" > /tmp/sim_change_start
 
-mcu_send_message "Starting SIM    swap."
+mcu_send_message "Preparing for   SIM change."
 sleep 3
 
 
@@ -40,7 +40,7 @@ sleep 3
 #mcu_send_message "Continuing ..."
 #sleep 1
 
-mcu_send_message "Disabling the ME from transmitting and receiving RF signals."
+mcu_send_message "Securing modem... This isolates the device from the network."
 sleep 3
 
 old_imei=$(READ_IMEI)
@@ -52,11 +52,11 @@ answer=1
 while [[ "$answer" -eq 1 ]]; do
 	gl_modem AT AT+CFUN=4 | grep -q OK
 	if [[ $? -eq 1 ]]; then
-		mcu_send_message "Disabling failed. Trying again."
+		mcu_send_message "Please wait...  Finalizing modem isolation."
 		CHECK_ABORT
 	else
 		answer=0
-		mcu_send_message "Disabled."
+		mcu_send_message "Modem secured."
 		sleep 2
 	fi
 done
@@ -67,7 +67,7 @@ done
 timeout 15  python3 /lib/blue-merle/imei_generate.py -r
 
 
-mcu_send_message "Replace the SIM card. Then pull the switch."
+mcu_send_message "Please REMOVE   the SIM card now.Then pull switch to continue."
 
 echo done > /tmp/blue-merle-stage1
 logger -p notice -t blue-merle-toggle "Finished with Stage 1"

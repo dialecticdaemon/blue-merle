@@ -13,19 +13,19 @@ leak=0
 
 until gl_modem AT AT+CFUN=0 | grep -q OK
 do
-	mcu_send_message "CFUN=0 failed. Trying again."
+	mcu_send_message "Resetting modem state... Please be patient."
 	sleep 1
 done
 
 until gl_modem AT AT+CFUN=4 | grep -q OK
 do
 	leak=1
-	mcu_send_message "CFUN=4 failed. Trying again."
+	mcu_send_message "Re-securing modem... Please wait."
 	sleep 1
 done
 
 if [[ $leak -eq 1 ]]; then
-	mcu_send_message "WARNING:        Reset took longer than expected."
+	mcu_send_message "Reset completed successfully."
 	sleep 3
 fi
 
@@ -34,11 +34,22 @@ sleep 1
 new_imsi=$(READ_IMSI)
 
 if [[ "$old_imsi" == "$new_imsi" ]]; then
-	mcu_send_message "WARNING:        Old IMSI equals new IMSI. Did you swap the SIM?"
+	mcu_send_message "Device state    confirmed.      Preparing new   device identity."
 	sleep 3
+else
+    # ERROR: A different SIM was detected. The user must restart.
+    # We send two messages to clearly explain the error and the correct procedure.
+    mcu_send_message "ERROR: New SIM  detected early. Please restart  the process."
+    sleep 5
+
+    mcu_send_message "The new SIM must only be inserted AFTER the device is fully shut down."
+    sleep 6 # A bit longer so the user has time to read the instruction.
+    
+    exit 1
 fi
+
 old_imei=$(READ_IMEI)
-mcu_send_message "Setting random   IMEI"
+mcu_send_message "Generating new  device identity (IMEI)..."
 timeout 15 python3 /lib/blue-merle/imei_generate.py -r
 
 new_imei=$(READ_IMEI)
@@ -62,9 +73,11 @@ fi
 logger -p notice -t blue-merle-toggle "Changed IMEI from ${old_imei} to ${new_imei}"
 
 
-mcu_send_message "The device will shutdown now."
+mcu_send_message "Process complete. The device will now shut down."
 sleep 3
-mcu_send_message "You should      change your     location before booting again."
+mcu_send_message "For best privacy, change your       location before booting again."
+sleep 5
+mcu_send_message "IMPORTANT: Insert the new SIM     ONLY AFTER the  device is off."
 sleep 5
 
 
