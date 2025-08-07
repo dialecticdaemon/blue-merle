@@ -29,11 +29,8 @@ modes.add_argument("-r", "--random", help="Sets random IMEI",
 # Example IMEI: 490154203237518
 imei_length = 14  # without validation digit
 imei_prefix = [
-    "35729274",  # Apple iPhone 15
-    "35169743",  # Apple iPhone 15 Pro
-    "35663771",  # Samsung Galaxy S23
-    "35161058",  # Google Pixel 7
-    "35154570",  # Google Pixel 8
+    "86928305",  # Quectel EM05-G (European market) - Quectel EM05-G LTE Cat4 Modul Global Für Thinkpad T14 P14s X13 L13 L14 T14s Yoga Gen3 P16 Z13 Z16 P16s T16 Laptop 5W10V25829
+    "01617600",  # Quectel module (European market) - Quectel LTE Cat4 Modul EM05-G WWAN Karte für Thinkpad T14 X13 L14 L15 P14s P16s Gen3 Laptop 5W10V25829
 ]
 
 verbose = False
