@@ -13,8 +13,37 @@ STOP=99
 start() {
 	# Apply Windows-like network stack configuration
 	# Set TTL to 128 (Windows default) instead of 64 (Linux default)
-	# This is applied directly without conflicting with OpenWrt's system config
 	sysctl -w net.ipv4.ip_default_ttl=128 2>/dev/null || true
+	
+	# TCP Window Scaling - Windows-like behavior
+	# Set TCP window scaling to match Windows defaults
+	sysctl -w net.ipv4.tcp_window_scaling=1 2>/dev/null || true
+	sysctl -w net.ipv4.tcp_timestamps=1 2>/dev/null || true
+	sysctl -w net.ipv4.tcp_sack=1 2>/dev/null || true
+	
+	# TCP Buffer Sizes - Windows-like defaults
+	# Windows uses different buffer sizes than Linux
+	sysctl -w net.core.rmem_default=65536 2>/dev/null || true
+	sysctl -w net.core.rmem_max=262144 2>/dev/null || true
+	sysctl -w net.core.wmem_default=65536 2>/dev/null || true
+	sysctl -w net.core.wmem_max=262144 2>/dev/null || true
+	
+	# TCP specific buffers
+	sysctl -w net.ipv4.tcp_rmem="4096 65536 262144" 2>/dev/null || true
+	sysctl -w net.ipv4.tcp_wmem="4096 65536 262144" 2>/dev/null || true
+	
+	# MTU Configuration for LTE Networks
+	# Set WAN MTU to 1428 (LTE-typical, accounts for IPsec overhead)
+	# This optimizes for LTE networks and matches Windows behavior
+	if [ -n "$(uci -q get network.wan)" ]; then
+		uci set network.wan.mtu=1428 2>/dev/null || true
+		uci commit network 2>/dev/null || true
+	fi
+	
+	# MSS Clamping for LTE optimization
+	# Set TCP MSS to 1388 (1428 - 40 for IP header)
+	sysctl -w net.ipv4.tcp_mtu_probing=1 2>/dev/null || true
+	sysctl -w net.ipv4.tcp_mtu_probe_floor=1388 2>/dev/null || true
 	
 	RESET_BSSIDS
 	RANDOMIZE_MACADDR
