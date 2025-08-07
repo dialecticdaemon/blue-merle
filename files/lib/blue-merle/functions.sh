@@ -102,15 +102,3 @@ CHECK_ABORT () {
                 exit 1
         fi
 }
-
-# Check if TTL is set to Windows default (128)
-CHECK_TTL () {
-        local current_ttl=$(sysctl -n net.ipv4.ip_default_ttl 2>/dev/null || echo "0")
-        if [[ "$current_ttl" -eq 128 ]]; then
-                echo "TTL is correctly set to Windows default (128)"
-                return 0
-        else
-                echo "TTL is set to $current_ttl (should be 128 for Windows emulation)"
-                return 1
-        fi
-}
