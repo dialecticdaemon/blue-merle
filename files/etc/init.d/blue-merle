@@ -12,9 +12,7 @@ STOP=99
 
 start() {
 	# Apply Windows-like network stack configuration
-	# Set TTL to 128 (Windows default) instead of 64 (Linux default)
-	# This is applied directly without conflicting with OpenWrt's system config
-	sysctl -w net.ipv4.ip_default_ttl=128 2>/dev/null || true
+	sysctl -p /etc/sysctl.conf 2>/dev/null || true
 	
 	RESET_BSSIDS
 	RANDOMIZE_MACADDR
