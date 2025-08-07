@@ -53,26 +53,6 @@ elif [ "$1" == "check-ttl" ]; then
         echo -n "TTL still at Linux default (64)"
     fi
 
-elif [ "$1" == "check-tcp" ]; then
-    CHECK_TCP_WINDOWS
-    if [ $? -eq 0 ]; then
-        show_message "TCP: Windows defaults"
-        echo -n "TCP settings match Windows defaults"
-    else
-        show_message "TCP: Linux defaults"
-        echo -n "TCP settings still at Linux defaults"
-    fi
-
-elif [ "$1" == "check-mtu" ]; then
-    CHECK_MTU_LTE
-    if [ $? -eq 0 ]; then
-        show_message "MTU: LTE optimized"
-        echo -n "MTU settings optimized for LTE"
-    else
-        show_message "MTU: Default settings"
-        echo -n "MTU settings still at defaults"
-    fi
-
 else
     echo -n   '{"msg":"Hello, World!"}'
     #echo 'foo'>&2
