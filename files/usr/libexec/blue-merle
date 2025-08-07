@@ -42,6 +42,17 @@ elif [ "$1" == "shutdown" ]; then
 elif [ "$1" == "write-imei" ]; then
     new_imei=$2
     echo -n  { "action": "write" }
+
+elif [ "$1" == "check-ttl" ]; then
+    CHECK_TTL
+    if [ $? -eq 0 ]; then
+        show_message "TTL: Windows default (128)"
+        echo -n "TTL correctly set to Windows default (128)"
+    else
+        show_message "TTL: Linux default (64)"
+        echo -n "TTL still at Linux default (64)"
+    fi
+
 else
     echo -n   '{"msg":"Hello, World!"}'
     #echo 'foo'>&2

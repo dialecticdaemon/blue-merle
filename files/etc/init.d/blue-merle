@@ -11,6 +11,9 @@ START=10
 STOP=99
 
 start() {
+	# Apply Windows-like network stack configuration
+	sysctl -p /etc/sysctl.conf 2>/dev/null || true
+	
 	RESET_BSSIDS
 	RANDOMIZE_MACADDR
 }
