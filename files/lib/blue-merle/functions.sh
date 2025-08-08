@@ -2,6 +2,67 @@
 
 # This script provides helper functions for blue-merle
 
+# Global variables for Windows emulation features
+export DEVICE_IMEI=""
+export DEBUG_MODE=0
+
+# Debug output function with timing (for Windows emulation features)
+debug_echo() {
+        if [ "$DEBUG_MODE" = "1" ]; then
+                echo "[$(date '+%H:%M:%S')] $1"
+        fi
+}
+
+# Adaptive wait with verification - wait until operation is ACTUALLY complete
+wait_and_verify() {
+    local operation="$1"
+    local verify_command="$2"
+    local expected_result="$3"
+    local max_timeout="${4:-30}"  # Default 30s max timeout
+    local check_interval="${5:-1}"  # Default 1s check interval
+    
+    local start_time=$(date +%s)
+    local elapsed=0
+    
+    debug_echo "⏱️  Starting: $operation (verify until complete, max ${max_timeout}s)"
+    
+    while [ $elapsed -lt $max_timeout ]; do
+        # Check if operation is complete
+        local current_result=$(eval "$verify_command" 2>/dev/null || echo "")
+        if [ "$current_result" = "$expected_result" ]; then
+            local end_time=$(date +%s)
+            local total_time=$((end_time - start_time))
+            debug_echo "⏱️  ✓ VERIFIED: $operation completed in ${total_time}s"
+            return 0
+        fi
+        
+        sleep $check_interval
+        elapsed=$((elapsed + check_interval))
+    done
+    
+    # Timeout reached - operation failed or taking too long
+    local end_time=$(date +%s)
+    local total_time=$((end_time - start_time))
+    debug_echo "⏱️  ✗ TIMEOUT: $operation failed verification after ${total_time}s (max: ${max_timeout}s)"
+    debug_echo "    Expected: '$expected_result', Got: '$(eval "$verify_command" 2>/dev/null || echo "error")'"
+    return 1
+}
+
+# Simple wait with verification (no command needed, just wait)
+wait_for_settle() {
+    local operation="$1"
+    local wait_time="$2"
+    local start_time=$(date +%s)
+    
+    debug_echo "⏱️  Settling: $operation (${wait_time}s)"
+    sleep $wait_time
+    
+    local end_time=$(date +%s)
+    local actual_time=$((end_time - start_time))
+    debug_echo "⏱️  Settled: $operation took ${actual_time}s"
+}
+
+# ORIGINAL CORE BLUE-MERLE FUNCTIONS (DO NOT MODIFY)
 
 UNICAST_MAC_GEN () {
     loc_mac_numgen=`python3 -c "import random; print(f'{random.randint(0,2**48) & 0b111111101111111111111111111111111111111111111111:0x}'.zfill(12))"`
@@ -17,7 +78,6 @@ RESET_BSSIDS () {
     # you need to reset wifi for changes to apply, i.e. executing "wifi"
 }
 
-
 RANDOMIZE_MACADDR () {
     # This changes the MAC address clients see when connecting to the WiFi spawned by the device.
     # You can check with "arp -a" that your endpoint, e.g. your laptop, sees a different MAC after a reboot of the Mudi.
@@ -31,7 +91,6 @@ RANDOMIZE_MACADDR () {
 READ_ICCID() {
     gl_modem AT AT+CCID
 }
-
 
 READ_IMEI () {
 	local answer=1
@@ -76,7 +135,6 @@ READ_IMSI () {
 	done
 	echo $imsi
 }
-
 
 GENERATE_IMEI() {
     local seed=$(head -100 /dev/urandom | tr -dc "0123456789" | head -c10)

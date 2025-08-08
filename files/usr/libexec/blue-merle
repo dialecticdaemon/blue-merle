@@ -42,6 +42,67 @@ elif [ "$1" == "shutdown" ]; then
 elif [ "$1" == "write-imei" ]; then
     new_imei=$2
     echo -n  { "action": "write" }
+
+elif [ "$1" == "check-ttl" ]; then
+    CHECK_TTL
+    if [ $? -eq 0 ]; then
+        show_message "TTL: Windows-like (128)"
+        echo -n "TTL configured correctly for Windows emulation"
+    else
+        show_message "TTL: Linux-like (64)"
+        echo -n "TTL needs adjustment for Windows emulation"
+    fi
+
+elif [ "$1" == "check-tcp" ]; then
+    CHECK_TCP_WINDOWS
+    if [ $? -eq 0 ]; then
+        show_message "TCP: Windows-like configuration"
+        echo -n "TCP stack configured for Windows emulation"
+    else
+        show_message "TCP: Needs adjustment"
+        echo -n "TCP stack needs adjustment for Windows emulation"
+    fi
+
+elif [ "$1" == "check-dhcp" ]; then
+    CHECK_DHCP_WINDOWS
+    if [ $? -eq 0 ]; then
+        show_message "DHCP: Windows-like client (dhcpcd)"
+        echo -n "DHCP client configured for Windows emulation"
+    else
+        show_message "DHCP: Linux default (udhcpc)"
+        echo -n "DHCP client needs upgrade to dhcpcd for Windows-like behavior"
+    fi
+
+elif [ "$1" == "check-dns" ]; then
+    CHECK_DNS_SIMULATION
+    if [ $? -eq 0 ]; then
+        show_message "DNS: Windows background simulation active"
+        echo -n "Windows DNS background simulation running securely"
+    else
+        show_message "DNS: Simulation inactive or insecure"
+        echo -n "DNS simulation needs attention"
+    fi
+
+elif [ "$1" == "check-emulation" ]; then
+    CHECK_WINDOWS_EMULATION
+    if [ $? -eq 0 ]; then
+        show_message "Windows emulation: EXCELLENT"
+        echo -n "Windows 11 emulation configured excellently"
+    else
+        show_message "Windows emulation: NEEDS IMPROVEMENT"
+        echo -n "Windows 11 emulation needs improvement"
+    fi
+
+elif [ "$1" == "check-risks" ]; then
+    ANALYZE_DETECTION_RISKS
+    if [ $? -eq 0 ]; then
+        show_message "Risk analysis: LOW RISK"
+        echo -n "Windows emulation detection risk analysis completed"
+    else
+        show_message "Risk analysis: NEEDS REVIEW"
+        echo -n "Windows emulation needs review"
+    fi
+
 else
     echo -n   '{"msg":"Hello, World!"}'
     #echo 'foo'>&2

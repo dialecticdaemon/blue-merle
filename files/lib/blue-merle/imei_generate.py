@@ -29,10 +29,10 @@ modes.add_argument("-r", "--random", help="Sets random IMEI",
 # Example IMEI: 490154203237518
 imei_length = 14  # without validation digit
 # IDEA: make prefix configurable via CLI option
-imei_prefix = ["35674108", "35290611", "35397710", "35323210", "35384110",
-               "35982748", "35672011", "35759049", "35266891", "35407115",
-               "35538025", "35480910", "35324590", "35901183", "35139729",
-               "35479164"]
+imei_prefix = [
+    "86928305",  # Quectel EM05-G (European market) - Quectel EM05-G LTE Cat4 Modul Global Für Thinkpad T14 P14s X13 L13 L14 T14s Yoga Gen3 P16 Z13 Z16 P16s T16 Laptop 5W10V25829
+    "01617600",  # Quectel module (European market) - Quectel LTE Cat4 Modul EM05-G WWAN Karte für Thinkpad T14 X13 L14 L15 P14s P16s Gen3 Laptop 5W10V25829
+]
 
 verbose = False
 mode = None
