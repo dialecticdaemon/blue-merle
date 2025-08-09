@@ -30,10 +30,12 @@ modes.add_argument("-r", "--random", help="Sets random IMEI",
 imei_length = 14  # without validation digit
 # IDEA: make prefix configurable via CLI option
 imei_prefix = [
-    "86928305",  # Quectel EM05-G (European market) - Quectel EM05-G LTE Cat4 Modul Global Für Thinkpad T14 P14s X13 L13 L14 T14s Yoga Gen3 P16 Z13 Z16 P16s T16 Laptop 5W10V25829
-    "01617600",  # Quectel module (European market) - Quectel LTE Cat4 Modul EM05-G WWAN Karte für Thinkpad T14 X13 L14 L15 P14s P16s Gen3 Laptop 5W10V25829
+    # this one is the native TAC it will not be used for now "86928305",  # Quectel EM05-G GLInetMudi E750V2 TAC (European market) apparently also used in Thinkpad T14 P14s X13 L13 L14 T14s Yoga Gen3 P16 Z13 Z16 P16s T16 Laptop 5W10V25829
+    "01617600",  # Quectel module (Extracted) (European market) - Quectel LTE Cat4 Modul EM05-G WWAN Karte für Thinkpad T14 X13 L14 L15 P14s P16s Gen3 Laptop 5W10V25829
 ]
 
+# NOTE: we are not using the native TAC for now we are testing the windows TAC - further we need to find more windows TACs to blend into the pool there must be more than one
+# NOTE : Check if the mudi TAC is really also used in other devices - can not be possible as it is a unique TAC for the mudi
 verbose = False
 mode = None
 
