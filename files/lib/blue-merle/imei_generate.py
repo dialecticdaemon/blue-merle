@@ -32,6 +32,8 @@ imei_prefix = [
                "86722805"
                ]
 
+# NOTE this TAC is the original modem side TAC - for now this is the best way not alerting Carrier Logistics and causing a determistic anomaly
+
 verbose = False
 mode = None
 
