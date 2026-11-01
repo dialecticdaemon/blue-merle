@@ -17,62 +17,81 @@ RESET_BSSIDS () {
     # you need to reset wifi for changes to apply, i.e. executing "wifi"
 }
 
-# iPhone hotspots use one band, 5 GHz by default, with WPA2/WPA3 mixed and optional
-# management frame protection; turn off 2.4 GHz access points if a 5 GHz one is
-# enabled, a guest network on 2.4 GHz moves to 5 GHz
-IPHONE_RADIO () {
-    five=0
-    guest_on=0
+# succeeds if wifi-device $1 is a 2.4 GHz radio
+RADIO_2G () {
+    case "$(uci -q get wireless.$1.band)" in 2g) return 0;; 5g|6g) return 1;; esac
+    case "$(uci -q get wireless.$1.hwmode)" in *a) return 1;; esac
+    return 0
+}
+
+AP_IFACES () {
     for s in $(uci -q show wireless | sed -n 's/^wireless\.\([^.=]*\)=wifi-iface$/\1/p'); do
-        [ "$(uci -q get wireless.$s.mode)" = "ap" ] || continue
-        dev=$(uci -q get wireless.$s.device)
-        case "$(uci -q get wireless.$dev.band)$(uci -q get wireless.$dev.hwmode)" in
-            *5g*|*11a*)
-                uci set wireless.$s.encryption=sae-mixed
-                uci set wireless.$s.ieee80211w=1
-                [ "$(uci -q get wireless.$s.disabled)" = "1" ] || [ "$(uci -q get wireless.$dev.disabled)" = "1" ] || five=1;;
-        esac
-    done
-    [ $five = 1 ] || return 0
-    for s in $(uci -q show wireless | sed -n 's/^wireless\.\([^.=]*\)=wifi-iface$/\1/p'); do
-        [ "$(uci -q get wireless.$s.mode)" = "ap" ] || continue
-        dev=$(uci -q get wireless.$s.device)
-        case "$(uci -q get wireless.$dev.band)$(uci -q get wireless.$dev.hwmode)" in
-            *5g*|*11a*) ;;
-            *)
-                [ "$(uci -q get wireless.$s.guest)" = "1" ] && [ "$(uci -q get wireless.$s.disabled)" != "1" ] && guest_on=1
-                uci set wireless.$s.disabled=1;;
-        esac
-    done
-    [ $guest_on = 1 ] || return 0
-    for s in $(uci -q show wireless | sed -n 's/^wireless\.\([^.=]*\)=wifi-iface$/\1/p'); do
-        [ "$(uci -q get wireless.$s.guest)" = "1" ] || continue
-        dev=$(uci -q get wireless.$s.device)
-        case "$(uci -q get wireless.$dev.band)$(uci -q get wireless.$dev.hwmode)" in
-            *5g*|*11a*) uci set wireless.$s.disabled=0;;
-        esac
+        [ "$(uci -q get wireless.$s.mode)" = "ap" ] && echo $s
     done
 }
 
-# with a German SIM (MCC 262), use channel 44 on 5 GHz like iPhone hotspots there;
-# used on IMEI change, $1 is the IMSI of the SIM, only its country code is used
-IPHONE_CHANNEL () {
+# on IMEI change, store only whether the SIM ($1: IMSI) is European (MCC 2xx)
+IPHONE_REGION () {
     [ "$(uci -q get blue-merle.wifi.ssid)" = "iphone" ] || return 0
-    case "$1" in 262*) ;; *) return 0;; esac
-    for dev in $(uci -q show wireless | sed -n 's/^wireless\.\([^.=]*\)=wifi-device$/\1/p'); do
-        case "$(uci -q get wireless.$dev.band)$(uci -q get wireless.$dev.hwmode)" in
-            *5g*|*11a*) uci set wireless.$dev.channel=44;;
-        esac
+    case "$1" in
+        2[0-9][0-9]*) uci set blue-merle.wifi.region=europe;;
+        *) uci -q delete blue-merle.wifi.region;;
+    esac
+    uci commit blue-merle
+}
+
+# use one band like an iPhone hotspot: 2.4 GHz channel 6 with WPA2, or with a European
+# SIM in 37 % of boots, the share on WiGLE, 5 GHz channel 44 with WPA2/WPA3
+IPHONE_RADIO () {
+    on=0
+    guest_on=0
+    has2=0
+    has5=0
+    for s in $(AP_IFACES); do
+        dev=$(uci -q get wireless.$s.device)
+        [ "$(uci -q get wireless.$s.guest)" = "1" ] || { RADIO_2G $dev && has2=1 || has5=1; }
+        [ "$(uci -q get wireless.$s.disabled)" = "1" ] && continue
+        [ "$(uci -q get wireless.$dev.disabled)" = "1" ] && continue
+        on=1
+        [ "$(uci -q get wireless.$s.guest)" = "1" ] && guest_on=1
     done
-    uci commit wireless
+    [ $on = 1 ] || return 0
+    five=0
+    if [ "$(uci -q get blue-merle.wifi.region)" = "europe" ] && [ $has5 = 1 ]; then
+        [ $(( $(hexdump -n2 -e '/2 "%u"' /dev/urandom) % 100 )) -lt 37 ] && five=1
+    fi
+    [ $has2 = 1 ] || [ $five = 1 ] || return 0
+    for s in $(AP_IFACES); do
+        dev=$(uci -q get wireless.$s.device)
+        band5=1
+        RADIO_2G $dev && band5=0
+        if [ $band5 != $five ]; then
+            uci set wireless.$s.disabled=1
+            continue
+        fi
+        if [ "$(uci -q get wireless.$s.guest)" = "1" ]; then
+            uci set wireless.$s.disabled=$((1 - guest_on))
+        else
+            uci set wireless.$s.disabled=0
+        fi
+        uci set wireless.$dev.disabled=0
+        if [ $five = 1 ]; then
+            uci set wireless.$dev.channel=44
+            uci set wireless.$s.encryption=sae-mixed
+            uci set wireless.$s.ieee80211w=1
+        else
+            uci set wireless.$dev.channel=6
+            uci set wireless.$s.encryption=psk2
+            uci -q delete wireless.$s.ieee80211w
+        fi
+    done
 }
 
 # with blue-merle.wifi.ssid=iphone, give the Wi-Fi networks the most common iPhone
 # hotspot name; guest networks get the name iOS gives a second iPhone
 RESET_SSIDS () {
     [ "$(uci -q get blue-merle.wifi.ssid)" = "iphone" ] || return 0
-    for s in $(uci -q show wireless | sed -n 's/^wireless\.\([^.=]*\)=wifi-iface$/\1/p'); do
-        [ "$(uci -q get wireless.$s.mode)" = "ap" ] || continue
+    for s in $(AP_IFACES); do
         if [ "$(uci -q get wireless.$s.guest)" = "1" ]; then
             uci set wireless.$s.ssid="iPhone (2)"
         else
